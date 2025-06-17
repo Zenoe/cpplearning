@@ -1,0 +1,30 @@
+{
+  "name": "Sample JSON File",
+  "version": "1.0",
+  "description": "An example JSON file generated upon request",
+  "data": {
+    "users": [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com",
+        "active": true
+      },
+      {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "jane@example.com",
+        "active": false
+      }
+    ],
+    "settings": {
+      "theme": "dark",
+      "notifications": true,
+      "itemsPerPage": 10
+    }
+  },
+  "metadata": {
+    "createdAt": "2023-11-15T12:00:00Z",
+    "lastUpdated": "2023-11-15T12:30:00Z"
+  }
+}
