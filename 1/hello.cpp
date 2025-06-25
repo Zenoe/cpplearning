@@ -7,6 +7,7 @@
 #include <memory>
 #include "Counter.h"
 #include "fraction.h"
+#include "widget.h"
 
 using ivec = std::vector<int>;
 void printp2dv(const std::vector<p2d> &p2dv) {
@@ -179,6 +180,12 @@ void testCls() {
   // no implicit conversion
   // foo(3);
   foo(Counter(3));
+
+  Counter ct2 = std::move(ct1);
+  print("ct2.print");
+  ct2.print();
+  print("ct1.print");
+  ct1.print();
 }
 
 void testThrow(){
@@ -190,13 +197,31 @@ void testThrow(){
     std::cerr <<"error: " << e.what() << '\n';
   }
 }
+
+void testWidget(){
+  Widget w {{1,2,3}, "aaa"};
+  w.print();
+  Widget w2(w);
+  w2.print();
+  // print(w2.v_);
+  Widget w3(std::move(w2));
+  print("w3");
+  w3.print();
+  print("w2");
+  w2.print();
+  Widget w4 = w3;
+  print("w4");
+  w4.print();
+
+}
 int main() {
   std::cout << "hello\n";
   // testlimit();
-  testvector();
+  // testvector();
   // testEnum();
   // testString();
   // testCls();
   // testPtr();
   // testThrow();
+  testWidget();
 }
