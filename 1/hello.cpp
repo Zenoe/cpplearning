@@ -212,10 +212,47 @@ void testWidget(){
   Widget w4 = w3;
   print("w4");
   w4.print();
+}
 
+void testWidgetOperator(){
+  Widget w {{1,2,3}, "aaa"};
+  print(w[0]);
+  const Widget cw {{9,8,7}, "bbb"};
+  print(cw[0]);
+  // print((*( new Widget{{19,18,17}, "bbb"} ))[0]);
+  Widget w3 {{19,18,17}, "bbb"};
+  // float s = std::move(w3[0]);
+  float s = std::move(w3)[0];// Explicitly moved object
+  print("sss ", s);
+  w3.print();
+  float y = Widget{{3,2,1}, "tmp"}[0];  // Temporary object, 优先调用 &&operator, 如果没有，会调用const operator
+  // Widget{{1,2,3},"x"}[0] is rvalue
+  // Widget{{1,2,3},"x"}[0] = 5.0f;  // compile error, lvalue required as left operand of assignment
+}
+
+void testRefRef(){
+  print("testRefRef");
+  const Widget & w0 = Widget{{1,2,3}, "ddd"};
+  w0.print();
+
+  Widget && w1 = Widget{{21,22,23}, "ddd"};
+  w1.print();
+
+  Widget && w2 = std::move(Widget{{11,12,13}, "xxx"});
+  w2.print();
+}
+
+
+void variadicTpl(){
+  print("empty arguments for variaic");
+}
+
+template<typename T, typename... args>
+void variadicTpl(T arg1, args... otherArgs){
+  print(arg1);
+  variadicTpl(otherArgs...);
 }
 int main() {
-  std::cout << "hello\n";
   // testlimit();
   // testvector();
   // testEnum();
@@ -223,5 +260,8 @@ int main() {
   // testCls();
   // testPtr();
   // testThrow();
-  testWidget();
+  // testWidget();
+  // testWidgetOperator();
+  // testRefRef();
+  variadicTpl("hello", "there", "not", "here");
 }

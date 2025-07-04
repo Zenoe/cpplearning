@@ -1,0 +1,3 @@
+g++ -std=c++17 -o cpp_fd2 fd2.cpp -lstdc++fs -lre2
+g++ -std=c++17 -o cpp_fd fd.cpp -lstdc++fs
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Wshadow finder.cpp -o finder
