@@ -1,6 +1,7 @@
 ---
 Language:        Cpp
 # BasedOnStyle:  LLVM
+BasedOnStyle: Google
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: false

@@ -11,6 +11,7 @@ namespace fs = std::filesystem;
 using std::unique_ptr;
 using std::make_unique;
 
+int g_count = 0;
 // std::string glob_to_regex(const std::string& glob) {
 std::string glob_to_regex(std::string_view glob) {
     std::string regex_str;
@@ -85,6 +86,7 @@ void fd_search(
             // Check if the filename matches the pattern
             std::string filename = entry.path().filename().string();
             if (RE2::PartialMatch(filename, *pattern)) {
+              g_count +=1;
                 std::cout << entry.path().string() << std::endl;
             }
 
@@ -118,9 +120,9 @@ int main(int argc, char* argv[]) {
     // Compile regex with case-insensitive flag if needed
 
     RE2::Options options;
-    if(case_sensitive)
-      options.set_case_sensitive(case_sensitive);
-
+    // if(case_sensitive)
+    //   options.set_case_sensitive(case_sensitive);
+    options.set_case_sensitive(false);
     auto pattern = make_unique<RE2>(pattern_str, options);
     if(!pattern->ok()){
       std::cerr << "Invalid regex pattern: " << pattern->error() << std::endl;
@@ -142,5 +144,7 @@ int main(int argc, char* argv[]) {
     // Perform search
     fd_search(dir, pattern, gitignore_rules, max_depth);
 
+    // 5726
+    std::cout << g_count << '\n';
     return 0;
 }
