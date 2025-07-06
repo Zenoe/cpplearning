@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "../tool.h"
+#include "tool.h"
 
 namespace fs = std::filesystem;
 
