@@ -1,0 +1,85 @@
+.DS_Store
+.idea
+*.log
+tmp/
+
+.cache
+# CMake build directories
+/build/
+*/build/
+/build-*/
+/out/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+/install_manifest.txt
+/CTestTestfile.cmake
+/Testing/
+*.dir/
+
+# Compiled object files, libraries, executables
+*.gch
+*.o
+*.lo
+*.la
+*.a
+*.so
+*.so.*
+*.dylib
+*.exe
+*.dll
+*.obj
+*.pdb
+
+# Editor specific files
+*.swp
+*~
+*.user
+*.suo
+*.sdf
+*.opensdf
+
+# macOS files
+.DS_Store
+
+# Qt Creator
+*.autosave
+*.pro.user
+*.qbs.user
+
+# VSCode settings
+.vscode/
+
+# CLion
+.idea/
+cmake-build-*/
+
+# Xcode
+*.xcworkspace
+*.xcodeproj
+*.xcuserdata
+
+# Other backup/swap files
+*.bak
+*.tmp
+
+# Valgrind
+vgcore.*
+
+# Ninja build files
+/build.ninja
+/.ninja_log
+/.ninja_deps
+
+# Coverage/Testing
+*.gcno
+*.gcda
+*.gcov
+
+# Generated docs
+/doc/html/
+/doc/latex/
+
+# Ignore log files
+*.log

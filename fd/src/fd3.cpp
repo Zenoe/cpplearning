@@ -22,18 +22,6 @@ using std::make_unique;
 using std::cout;
 
 int g_count = 0;
-// std::string glob_to_regex(std::string_view glob) {
-//     std::string regex_str;
-//     for (char c : glob) {
-//         switch (c) {
-//             case '*': regex_str += ".*"; break;
-//             case '?': regex_str += '.';  break;
-//             case '.': regex_str += "\\."; break;
-//             default:  regex_str += c;
-//         }
-//     }
-//     return regex_str;
-// }
 
 // Parse .gitignore rules (simplified)
 std::vector<unique_ptr<RE2>> load_gitignore_rules(const fs::path& dir) {

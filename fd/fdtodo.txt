@@ -1,0 +1,19 @@
+Multithreading  we can add std::thread. (e.g., std::thread or OpenMP).
+
+Better .gitignore parsing (full Git-compatible rules).
+
+Exec Command Support (-x rm like fd).
+
+Better Glob Parsing: Use a library like glob.h for full glob support.
+
+Memory-Mapped .gitignore: Faster parsing for large ignore files.
+
+Optimize filesystem calls (batch operations).
+
+Support [a-z] glob ranges (e.g., file[0-9].txt → file[0-9]\.txt).
+
+Add ^ and $ anchors for exact matches (e.g., *.txt → ^.*\.txt$).
+
+Optimize regex compilation (cache compiled patterns).
+
+* Use a faster regex engine (like RE2).
