@@ -1,0 +1,20 @@
+#+title: Note
+* possible makefile
+CXX      := g++
+CXXFLAGS := -std=c++17 -Wall -Wextra -Wpedantic
+LDFLAGS  := -lstdc++fs
+
+# Targets (executables)
+all: cpp_fd2 cpp_fd finder
+
+cpp_fd2: fd2.cpp
+	$(CXX) $(CXXFLAGS) -o cpp_fd2 fd2.cpp $(LDFLAGS) -lre2
+
+cpp_fd: fd.cpp
+	$(CXX) $(CXXFLAGS) -o cpp_fd fd.cpp $(LDFLAGS)
+
+finder: finder.cpp
+	$(CXX) $(CXXFLAGS) finder.cpp -o finder
+
+clean:
+	rm -f cpp_fd2 cpp_fd finder

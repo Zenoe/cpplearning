@@ -14,23 +14,26 @@
 #include <chrono>
 #include <re2/re2.h>
 
+#include "g_utils.h"
+
 namespace fs = std::filesystem;
 using std::unique_ptr;
 using std::make_unique;
+using std::cout;
 
 int g_count = 0;
-std::string glob_to_regex(std::string_view glob) {
-    std::string regex_str;
-    for (char c : glob) {
-        switch (c) {
-            case '*': regex_str += ".*"; break;
-            case '?': regex_str += '.';  break;
-            case '.': regex_str += "\\."; break;
-            default:  regex_str += c;
-        }
-    }
-    return regex_str;
-}
+// std::string glob_to_regex(std::string_view glob) {
+//     std::string regex_str;
+//     for (char c : glob) {
+//         switch (c) {
+//             case '*': regex_str += ".*"; break;
+//             case '?': regex_str += '.';  break;
+//             case '.': regex_str += "\\."; break;
+//             default:  regex_str += c;
+//         }
+//     }
+//     return regex_str;
+// }
 
 // Parse .gitignore rules (simplified)
 std::vector<unique_ptr<RE2>> load_gitignore_rules(const fs::path& dir) {
@@ -41,7 +44,7 @@ std::vector<unique_ptr<RE2>> load_gitignore_rules(const fs::path& dir) {
     std::string line;
     while (std::getline(gitignore, line)) {
         if (line.empty() || line.find("#") == 0) continue;
-        std::string regex_str = glob_to_regex(line);
+        std::string regex_str = gutils::glob_to_regex(line);
         auto rule = make_unique<RE2>(regex_str);
         if(!rule->ok()){
           std::cerr << "Invalid .gitignore regex pattern: " << rule->error() << std::endl;
@@ -190,10 +193,16 @@ void fd_search_enhanced(
         );
     }
 
-    std::unique_lock<std::mutex> lock(worker_mtx);
-    worker_cv.wait(lock, [&]{
-      return pending_work.load() == 0 && dir_queue.empty();
-    });
+    {
+      // must keep in a {}, to unlock worker_mtx, allowing worker thread joinning to finish
+      // in the end of worker thread, there's acquiring worker_mtx statement
+        std::unique_lock<std::mutex> lock(worker_mtx);
+        worker_cv.wait(lock, [&] {
+          // cout << "\nwait" << pending_work.load() << " " << dir_queue.empty() << "\n";
+          return pending_work.load() == 0 && dir_queue.empty();
+        });
+    }
+    // cout << "set_finished" << '\n';
     // introduce worker_cv and worker_mtx. It’s more efficient and idiomatic than polling/sleeping.
     // Monitor completion - when no work is pending and queue is empty
     // while (pending_work.load() > 0 || !dir_queue.empty()) {
@@ -214,7 +223,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Parse arguments
-    std::string pattern_str = glob_to_regex(argv[1]);
+    std::string pattern_str = gutils::glob_to_regex(argv[1]);
     fs::path dir = (argc > 2) ? argv[2] : ".";
     bool case_sensitive = false;
     int max_depth = -1;

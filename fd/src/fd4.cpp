@@ -17,6 +17,8 @@
 namespace fs = std::filesystem;
 using std::unique_ptr;
 using std::make_unique;
+using std::cout;
+
 int g_count = 0;
 std::string glob_to_regex(std::string_view glob) {
     std::string regex_str;
@@ -160,7 +162,9 @@ void fd_search_threaded(
 
             // Check if the filename matches the pattern
             std::string filename = entry.path().filename().string();
+            // cout << "trying " << entry.path().string() << "\n";
             if (RE2::PartialMatch(filename, *pattern)) {
+              // cout << "match: " << filename << "\n";
                 collector.add_result(entry.path().string());
             }
 

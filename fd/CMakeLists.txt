@@ -25,3 +25,10 @@ add_executable(finder src/finder.cpp)
 target_include_directories(finder PRIVATE /opt/cpp/include)
 # If you want strict warnings for this only:
 # target_compile_options(finder PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
+
+
+add_executable(cpp_fd3 src/fd3.cpp)
+target_link_libraries(cpp_fd3 PRIVATE common re2 pthread )
+
+add_executable(cpp_fd4 src/fd4.cpp)
+target_link_libraries(cpp_fd4 re2 pthread)
