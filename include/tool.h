@@ -1,6 +1,7 @@
 #ifndef TOOL_H_
 #define TOOL_H_
 #include <iostream>
+#include <vector>
 
 void print(){
     std:: cout << '\n';

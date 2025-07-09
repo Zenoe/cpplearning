@@ -1,5 +1,5 @@
 # common/CMakeLists.txt
-add_library(common STATIC g_utils.cpp)
+add_library(common STATIC gutils.cpp)
 
 # if it's not a library
 # add_executable(common glob_utils)
