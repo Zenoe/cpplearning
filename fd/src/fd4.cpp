@@ -146,11 +146,18 @@ void fd_search_threaded(
     ResultCollector& collector,
     ThreadPool& pool,
     std::atomic<int>& active_tasks,
+    std::mutex& output_mtx,
     int max_depth = -1,
     int current_depth = 0
 ) {
     active_tasks++;
 
+
+    // {
+
+    // std::lock_guard<std::mutex> lock(output_mtx);
+    // std::cout << "try " << dir.string() << "\n";
+    // }
     try {
         std::vector<fs::path> subdirs;
 
@@ -164,7 +171,8 @@ void fd_search_threaded(
             std::string filename = entry.path().filename().string();
             // cout << "trying " << entry.path().string() << "\n";
             if (RE2::PartialMatch(filename, *pattern)) {
-              // cout << "match: " << filename << "\n";
+              std::lock_guard<std::mutex> lock(output_mtx);
+              cout << "match: " << entry.path().string() << "\n";
                 collector.add_result(entry.path().string());
             }
 
@@ -179,7 +187,7 @@ void fd_search_threaded(
           // Whenever you launch work (e.g., a thread, task, closure) inside a loop, and the work needs the current item, capture it by value in the closure.
           // subdir is captured by value to ensure each thread have their own copy of var
             pool.enqueue([&, subdir]() {
-                fd_search_threaded(subdir, pattern, gitignore_rules, collector, pool, active_tasks, max_depth, current_depth + 1);
+                fd_search_threaded(subdir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth, current_depth + 1);
             });
         }
 
@@ -233,11 +241,12 @@ int main(int argc, char* argv[]) {
     ResultCollector collector;
     std::atomic<int> active_tasks(0);
 
+    std::mutex output_mtx;
     // Start the search
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // Use the thread pool approach for better resource management
-    fd_search_threaded(dir, pattern, gitignore_rules, collector, pool, active_tasks, max_depth);
+    fd_search_threaded(dir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth);
 
     // Wait for all tasks to complete
     while (active_tasks > 0) {

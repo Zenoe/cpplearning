@@ -1,5 +1,5 @@
 # common/CMakeLists.txt
-add_library(common STATIC gutils.cpp)
+add_library(common STATIC gutils.cpp zfs.cpp)
 
 # if it's not a library
 # add_executable(common glob_utils)
