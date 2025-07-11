@@ -1,5 +1,3 @@
-
-#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -15,25 +13,10 @@
 namespace fs = std::filesystem;
 
 using std::cout;
+using std::string_view;
+using std::string;
+using std::vector;
 
-// Helper to get YYYY-MM-DD string
-std::string get_today() {
-  auto t = std::chrono::system_clock::now();
-  std::time_t t_time = std::chrono::system_clock::to_time_t(t);
-  std::tm buf;
-#ifdef _WIN32
-  localtime_s(&buf, &t_time);
-#else
-  localtime_r(&t_time, &buf);
-#endif
-  char date[16];
-  std::strftime(date, sizeof(date), "%Y-%m-%d", &buf);
-  return date;
-}
-
-
-
-// Remove BOM if present at the beginning of the line
 std::string remove_bom(const std::string &line) {
   static const unsigned char bom[] = {0xEF, 0xBB, 0xBF};
   if (line.size() >= 3 && (unsigned char)line[0] == bom[0] &&
@@ -43,44 +26,97 @@ std::string remove_bom(const std::string &line) {
   return line;
 }
 
-void copyRealPassScript(const std::vector<std::string>& ignoreDirs){
+void copyRealPassScript(){
+  std::vector<std::string> ignoredDirs{"其他日志"};
   std::vector<fs::path> logDateDirs;
   logDateDirs.reserve(32);
-
-  std::string logDir = "/root/work/script/log";
+    std::map<std::string, std::string> log_script_map = {
+        {"0419", "pass20250419"},
+        {"0506", "pass20250506"},
+        {"0508", "pass20250508"},
+        {"0513", "pass20250513"},
+        {"0521", "pass20250521"},
+        {"0526", "pass20250526"},
+        {"0527", "pass20250527"},
+        {"0528", "pass20250528"},
+        {"0529", "pass20250529"},
+        {"0530", "pass20250530"},
+        {"0602", "pass20250602"},
+        {"0605", "pass20250605"},
+        {"0609", "pass20250609"},
+        {"0612", "pass20250612"},
+        {"0615", "pass20250615"},
+        {"0618", "pass20250618"},
+        {"0619", "pass20250619"},
+        {"0621", "pass20250621"},
+        {"0622", "pass20250622"},
+        {"0623", "pass20250623"},
+        {"0624", "pass20250624"},
+        {"062102", "pass2026062102"},
+        {"allPassed", "allPassed"},
+    };
+  string logDir = "/root/work/script/log";
+  string destDir = "/root/work/script/realPass";
+  if(!fs::exists(destDir)){
+    fs::create_directory(destDir);
+  }
+  size_t filecount = 0;
+  vector<string> pmsIds;
   try{
     for(auto const &entry: fs::directory_iterator(logDir)){
       // cout << entry.path().string() << "   " << entry.path().string() << "\n";
-      if(entry.is_directory() && !gutils::vector_contains(ignoreDirs, entry.path().filename().string()) ){
+      if(entry.is_directory() && !gutils::vector_contains(ignoredDirs, entry.path().filename().string()) ){
         // cout << "ok " << entry << "\n";
         logDateDirs.push_back(entry);
       }
     }
-    for(const auto& dir : logDateDirs){
-      for(auto const &entry: fs::recursive_directory_iterator(dir)){
+    for(const auto& logdir : logDateDirs){
+      for(auto const &entry: fs::recursive_directory_iterator(logdir)){
         // const auto& logfile = entry.path().filename().string();
         auto logfile = entry.path().filename().string();
         if(gutils::starts_with(logfile, "RG-") && gutils::ends_with(logfile, ".txt")){
           std::size_t pos = logfile.find('(');
           if(pos != std::string::npos){
-            std::string_view caseId(logfile.data(), pos);
+            string_view caseId(logfile.data(), pos);
+            auto tmp = gutils::get_last_third_part(caseId);
+            // cout << tmp << "\n";
+            // pmsIds.push_back(gutils::get_last_third_part(caseId));
+            pmsIds.push_back(string(tmp));
             // std::cout << caseId << "\n";
-            if(auto found_path = find_file("/root/work/script", std::string(caseId) + ".txt" ))
-              std::cout << *found_path << '\n';
+
+            // auto it = log_script_map.find(logdir);
+            // if(it != log_script_map.end())
+            // fs::path can be implicitly converted to string, but better to call .string() for portability and readability
+            if(auto it = log_script_map.find(logdir.filename().string()); it != log_script_map.end())
+            {
+              string fullPath = "/root/work/script/" + string(it->second);
+              if (auto found_path = find_file(fullPath, string(caseId) + ".txt")){
+                // cout << *found_path << '\n';
+                filecount += 1;
+
+                fs::copy_file(*found_path, destDir / found_path->filename(),
+                              fs::copy_options::overwrite_existing);
+              }
             }
+          }
         }
       }
     }
-  }catch(...){
 
+
+    vector<string_view> sv(pmsIds.begin(), pmsIds.end());
+    // write_lines_to_file(sv, "/root/work/script/combinedIds.txt");
+  }catch(std::exception &e){
+     std::cerr << "error: " << e.what() << std::endl;
   }
+  print("total copied files: ", filecount);
 }
 
 void copyScript(){
   std::string input_txt = "input.txt"; // Each line: file.txt
   std::vector<std::string> target_dirs = read_file_to_vector("dirs.txt");
   // Prepare output directory
-  std::string out_dir = "script" + get_today();
+  std::string out_dir = "script" + gutils::get_today();
   if (!fs::exists(out_dir))
     fs::create_directory(out_dir);
 
@@ -106,13 +142,13 @@ void copyScript(){
         fs::path fifth_part = found_path->parent_path().filename();
         fs::path fourth_part = found_path->parent_path().parent_path().filename();
         try {
-          fs::path sub_dir = fs::path(out_dir) / fourth_part / fifth_part;
+          fs::path sub_dir = fourth_part == "script" ? fs::path(out_dir) / "重跑pass" : fs::path(out_dir) / fourth_part / fifth_part;
           if(!fs::exists(sub_dir)){
             fs::create_directories(sub_dir);
           }
           fs::path dest = sub_dir / found_path->filename();
           fs::copy_file(*found_path, dest, fs::copy_options::overwrite_existing);
-          std::cout << "Copied: " << *found_path << " -> " << dest << std::endl;
+          cout << "Copied: " << *found_path << " -> " << dest << std::endl;
         } catch (std::exception &e) {
           std::cerr << "Copy error: " << e.what() << std::endl;
         }
@@ -134,8 +170,8 @@ void copyScript(){
   }
 }
 int main() {
-  // copyScript();
-  std::vector<std::string> ignoredDirs{"其他日志"};
-  copyRealPassScript(ignoredDirs);
+  // copyRealPassScript();
+  copyScript();
   return 0;
 }
+

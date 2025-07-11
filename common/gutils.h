@@ -17,4 +17,7 @@ namespace gutils {
   // string
   bool starts_with(const std::string& str, const std::string& prefix);
   bool ends_with(const std::string& str, const std::string& suffix);
+
+  std::string_view get_last_third_part(std::string_view s);
+std::string get_today();
 }
