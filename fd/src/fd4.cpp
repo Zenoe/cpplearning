@@ -1,4 +1,47 @@
-// multithreading by claude
+/**
+ * * active_tasks: call atomic operation instead of ++ --
+ * enclose pool creation in a {} ? dtor when out of scope
+ * each thread should have their own copy of max_depth, current_depth
+ * classic bug in recursive/multithreaded enqueuing if the work-counting isn’t handled precisely.
+ * active_tasks will decrease to 0 before it increases again, and this causes the pool to go out of scope and be destroyed.
+
+ * std::atomic<int> active_tasks(1);
+
+ * in thread function:
+ * active_tasks.fetch_add(1);  // when starting
+// ... do work ...
+for (auto &subdir: subdirs) {
+    pool.enqueue([=](){
+        fd_search_threaded(subdir, ...);
+    });
+}
+active_tasks.fetch_sub(1);  // when done with THIS directory
+
+main thread is waiting for active_tasks == 0, it might see zero before subthreads have incremented, and the thread pool can get destroyed.
+because it's not guaranteeing that the increment (fetch_add(1)) for each subtask happens before its parent decrements.
+
+Correct pattern:
+Before you enqueue each child, increment the counter.
+When the child finishes, it decrements.
+
+// In fd_search_threaded, after finding subdirectories:
+for (const auto& subdir : subdirs) {
+    active_tasks.fetch_add(1); // Reserve a task slot, BEFORE enqueue!
+    pool.enqueue([&, subdir]() {
+        fd_search_threaded(subdir, ...);
+        active_tasks.fetch_sub(1); // Mark this specific task done!
+    });
+}
+
+// Decrement for this level, when THIS call is done.
+active_tasks.fetch_sub(1);
+
+At the "top level":
+Main kicks off root by active_tasks.store(1) and fd_search_threaded(root, ...), waits until zero.
+or put initial state to be 1
+  std::atomic<int> active_tasks(1);
+ */
+
 #include <iostream>
 #include <filesystem>
 #include <vector>
@@ -14,45 +57,16 @@
 #include <atomic>
 #include <re2/re2.h>
 
+#include "gutils.h"
+#include "tool.h"
+
 namespace fs = std::filesystem;
 using std::unique_ptr;
 using std::make_unique;
 using std::cout;
 
 int g_count = 0;
-std::string glob_to_regex(std::string_view glob) {
-    std::string regex_str;
-    for (char c : glob) {
-        switch (c) {
-            case '*': regex_str += ".*"; break;
-            case '?': regex_str += '.';  break;
-            case '.': regex_str += "\\."; break; // Escape regex special chars
-            default:  regex_str += c;
-        }
-    }
-    return regex_str;
-}
-
-// Parse .gitignore rules (simplified)
-std::vector<unique_ptr<RE2>> load_gitignore_rules(const fs::path& dir) {
-    std::vector<unique_ptr<RE2>> rules;
-    std::ifstream gitignore(dir / ".gitignore");
-    if (!gitignore) return rules;
-
-    std::string line;
-    while (std::getline(gitignore, line)) {
-        if (line.empty() || line.find("#") == 0) continue;
-        // Convert glob to regex (simplified)
-        std::string regex_str = glob_to_regex(line);
-        auto rule = make_unique<RE2>(regex_str);
-        if(!rule->ok()){
-          std::cerr << "Invalid .gitignore regex pattern: " << rule->error() << std::endl;
-            continue;
-        }
-        rules.emplace_back(std::move(rule));
-    }
-    return rules;
-}
+std::mutex coutmtx;
 
 // Check if a path matches any .gitignore rule
 bool is_ignored(const fs::path& path, const std::vector<unique_ptr<RE2>>& rules) {
@@ -120,7 +134,9 @@ public:
     void enqueue(F&& f) {
         {
             std::lock_guard<std::mutex> lock(queue_mutex);
+            // std::cout << "enque begin" << "\n";
             if (stop) return;
+            // std::cout << "enque end" << "\n";
             tasks.emplace(std::forward<F>(f));
         }
         cv.notify_one();
@@ -129,12 +145,14 @@ public:
     ~ThreadPool() {
         {
             std::lock_guard<std::mutex> lock(queue_mutex);
+            std::cout << "put stop true \n";
             stop = true;
         }
         cv.notify_all();
         for (std::thread& worker : workers) {
             worker.join();
         }
+
     }
 };
 
@@ -150,29 +168,22 @@ void fd_search_threaded(
     int max_depth = -1,
     int current_depth = 0
 ) {
-    active_tasks++;
-
-
-    // {
-
-    // std::lock_guard<std::mutex> lock(output_mtx);
-    // std::cout << "try " << dir.string() << "\n";
-    // }
+    // active_tasks++;
+  // active_tasks.fetch_add(1, std::memory_order_relaxed);
+  // active_tasks.store(1);
     try {
         std::vector<fs::path> subdirs;
-
+        // print("dir:", dir);
         // Process current directory
         for (const auto& entry : fs::directory_iterator(dir)) {
             if (is_ignored(entry.path(), gitignore_rules)) {
                 continue;
             }
+            // print(entry.path().string());
 
-            // Check if the filename matches the pattern
             std::string filename = entry.path().filename().string();
-            // cout << "trying " << entry.path().string() << "\n";
             if (RE2::PartialMatch(filename, *pattern)) {
               std::lock_guard<std::mutex> lock(output_mtx);
-              cout << "match: " << entry.path().string() << "\n";
                 collector.add_result(entry.path().string());
             }
 
@@ -186,7 +197,10 @@ void fd_search_threaded(
         for (const auto& subdir : subdirs) {
           // Whenever you launch work (e.g., a thread, task, closure) inside a loop, and the work needs the current item, capture it by value in the closure.
           // subdir is captured by value to ensure each thread have their own copy of var
-            pool.enqueue([&, subdir]() {
+          // print("push ---------subdir:", subdir.string());
+          active_tasks.fetch_add(1, std::memory_order_relaxed);
+
+          pool.enqueue([&, subdir,  max_depth, current_depth]() {
                 fd_search_threaded(subdir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth, current_depth + 1);
             });
         }
@@ -195,7 +209,7 @@ void fd_search_threaded(
         std::cerr << "Error accessing " << dir << ": " << e.what() << std::endl;
     }
 
-    active_tasks--;
+    active_tasks.fetch_sub(1, std::memory_order_relaxed);
 }
 
 int main(int argc, char* argv[]) {
@@ -205,7 +219,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Parse arguments
-    std::string pattern_str = glob_to_regex(argv[1]);
+    std::string pattern_str = gutils::glob_to_regex(argv[1]);
     fs::path dir = (argc > 2) ? argv[2] : ".";
     bool case_sensitive = false;
     int max_depth = -1;
@@ -233,33 +247,34 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    // Load .gitignore rules
-    std::vector<unique_ptr<RE2>> gitignore_rules = load_gitignore_rules(dir);
+    std::vector<unique_ptr<RE2>> gitignore_rules = gutils::load_gitignore_rules(dir);
 
-    // Create thread pool and result collector
-    ThreadPool pool(num_threads);
     ResultCollector collector;
-    std::atomic<int> active_tasks(0);
-
-    std::mutex output_mtx;
-    // Start the search
     auto start_time = std::chrono::high_resolution_clock::now();
+    // {
+      // Create thread pool and result collector
+      ThreadPool pool(num_threads);
+      std::atomic<int> active_tasks(1);
 
-    // Use the thread pool approach for better resource management
-    fd_search_threaded(dir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth);
+      std::mutex output_mtx;
 
-    // Wait for all tasks to complete
-    while (active_tasks > 0) {
+      // Use the thread pool approach for better resource management
+      fd_search_threaded(dir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth, 0);
+
+      // Wait for all tasks to complete
+      while (active_tasks.load() > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+      }
 
+    // }
+    // std::cout << "pool dtor.....\n";
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-
     // Print results
+    std::cerr << "Search completed in " << duration.count() << " ms using " << num_threads << " threads" << std::endl;
+
     collector.print_results();
 
-    std::cerr << "Search completed in " << duration.count() << " ms using " << num_threads << " threads" << std::endl;
 
     std::cout << g_count << '\n';
     return 0;

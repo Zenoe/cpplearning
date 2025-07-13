@@ -1,19 +1,29 @@
 #include <chrono>
+#include <iostream>
+#include <fstream>
+
 #include "gutils.h"
 
 namespace gutils {
+
 std::string glob_to_regex(std::string_view glob) {
     std::string regex_str;
     for (char c : glob) {
         switch (c) {
-            case '*': regex_str += ".*"; break;
-            case '?': regex_str += '.';  break;
-            case '.': regex_str += "\\."; break;
-            default:  regex_str += c;
+        case '*': regex_str += ".*"; break;
+        case '?': regex_str += '.';  break;
+        case '.': regex_str += "\\."; break; // Escape regex special chars
+        case '\\': regex_str += "\\\\"; break;
+        case '+': case '^': case '$': case '(': case ')':
+        case '{': case '}': case '|': case '[': case ']':
+          regex_str += '\\';
+          break;
+        default:  regex_str += c;
         }
     }
     return regex_str;
 }
+
 
   // void hello(){
   // }
@@ -53,5 +63,28 @@ std::string glob_to_regex(std::string_view glob) {
     std::strftime(date, sizeof(date), "%Y-%m-%d", &buf);
     return date;
   }
+
+  namespace fs = std::filesystem;
+  using std::unique_ptr;
+  using std::make_unique;
+  std::vector<unique_ptr<RE2>> load_gitignore_rules(const fs::path& dir) {
+    std::vector<unique_ptr<RE2>> rules;
+    std::ifstream gitignore(dir / ".gitignore");
+    if (!gitignore) return rules;
+
+    std::string line;
+    while (std::getline(gitignore, line)) {
+        if (line.empty() || line.find("#") == 0) continue;
+        // Convert glob to regex (simplified)
+        std::string regex_str = gutils::glob_to_regex(line);
+        auto rule = make_unique<RE2>(regex_str);
+        if(!rule->ok()){
+          std::cerr << "Invalid .gitignore regex pattern: " << rule->error() << std::endl;
+            continue;
+        }
+        rules.emplace_back(std::move(rule));
+    }
+    return rules;
+}
 
 }

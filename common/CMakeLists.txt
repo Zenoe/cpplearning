@@ -10,5 +10,5 @@ target_include_directories(common
 )
 
 target_link_libraries(common
-    PUBLIC stdc++fs    # For older compilers/C++17 (not needed for C++20)
+    PUBLIC stdc++fs re2   # For older compilers/C++17 (not needed for C++20)
 )

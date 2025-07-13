@@ -4,7 +4,10 @@
 #include <string_view>
 #include <vector>
 #include <algorithm>
+#include <filesystem>
+#include <memory>
 
+#include <re2/re2.h>
 namespace gutils {
   std::string glob_to_regex(std::string_view glob);
   // void hello();
@@ -20,4 +23,6 @@ namespace gutils {
 
   std::string_view get_last_third_part(std::string_view s);
 std::string get_today();
+
+std::vector<std::unique_ptr<RE2>> load_gitignore_rules(const std::filesystem::path& dir);
 }

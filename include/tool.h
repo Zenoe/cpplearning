@@ -1,17 +1,33 @@
 #ifndef TOOL_H_
 #define TOOL_H_
 #include <iostream>
+#include <mutex>
 #include <vector>
 
-void print(){
-    std:: cout << '\n';
+static std::mutex print_mutex;  // Static global mutex
+
+void print() {
+    std::lock_guard<std::mutex> lock(print_mutex);
+    std::cout << '\n';
 }
 
 template<typename T, typename... Args>
 void print(T first, Args... args) {
-    std::cout << first << " ";
-    print(args...); // Recursively process the remaining arguments
+    {
+        std::lock_guard<std::mutex> lock(print_mutex);
+        std::cout << first << " ";
+    }
+    print(args...);
 }
+// void print(){
+//     std:: cout << '\n';
+// }
+
+// template<typename T, typename... Args>
+// void print(T first, Args... args) {
+//     std::cout << first << " ";
+//     print(args...); // Recursively process the remaining arguments
+// }
 
 std::vector<std::string> read_file_to_vector(const std::string &filename) {
   std::vector<std::string> lines;

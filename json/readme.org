@@ -1,0 +1,21 @@
+* makefile
+** all: program
+Here, all is the default target (because it's listed first).
+
+When you run make, it's equivalent to make all.
+
+This means: “to build all, make program.”
+
+👉 So the first rule is always the one executed if you don't specify a target.
+
+** A phony target is a name for a rule that doesn’t represent a real file.
+It’s just a label for a command you want to run, like clean, install, all, etc.
+
+Problem:
+If you have a file named clean in the directory, and you type make clean, Make will think it’s already done because the file exists.
+
+Fix:
+Use .PHONY to tell Make "this is not a file — always run this rule".
+
+** make -B stdafx.h.gch
+force a rebuld gch

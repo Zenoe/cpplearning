@@ -22,26 +22,6 @@ using std::cout;
 
 int g_count = 0;
 
-// Parse .gitignore rules (simplified)
-std::vector<unique_ptr<RE2>> load_gitignore_rules(const fs::path& dir) {
-    std::vector<unique_ptr<RE2>> rules;
-    std::ifstream gitignore(dir / ".gitignore");
-    if (!gitignore) return rules;
-
-    std::string line;
-    while (std::getline(gitignore, line)) {
-        if (line.empty() || line.find("#") == 0) continue;
-        std::string regex_str = gutils::glob_to_regex(line);
-        auto rule = make_unique<RE2>(regex_str);
-        if(!rule->ok()){
-          std::cerr << "Invalid .gitignore regex pattern: " << rule->error() << std::endl;
-            continue;
-        }
-        rules.emplace_back(std::move(rule));
-    }
-    return rules;
-}
-
 // Check if a path matches any .gitignore rule
 bool is_ignored(const fs::path& path, const std::vector<unique_ptr<RE2>>& rules) {
     std::string_view path_view = path.string();
@@ -239,7 +219,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Load .gitignore rules
-    std::vector<unique_ptr<RE2>> gitignore_rules = load_gitignore_rules(dir);
+    std::vector<unique_ptr<RE2>> gitignore_rules = gutils::load_gitignore_rules(dir);
 
     // Perform search with timing
     auto start_time = std::chrono::high_resolution_clock::now();

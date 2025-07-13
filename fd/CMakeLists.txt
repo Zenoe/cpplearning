@@ -34,4 +34,5 @@ target_include_directories(cpp_fd3 PRIVATE /opt/cpp/common)
 target_link_libraries(cpp_fd3 PRIVATE common re2 pthread )
 
 add_executable(cpp_fd4 src/fd4.cpp)
-target_link_libraries(cpp_fd4 re2 pthread)
+target_include_directories(cpp_fd4 PRIVATE /opt/cpp/include /opt/cpp/common)
+target_link_libraries(cpp_fd4 re2 pthread common)
