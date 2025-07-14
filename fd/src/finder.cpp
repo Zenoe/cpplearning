@@ -93,8 +93,11 @@ void copyRealPassScript(){
               if (auto found_path = find_file(fullPath, string(caseId) + ".txt")){
                 // cout << *found_path << '\n';
                 filecount += 1;
+                auto destSubdir =
+                    destDir / found_path->parent_path().filename();
+                std::filesystem::create_directories(destSubdir);
 
-                fs::copy_file(*found_path, destDir / found_path->filename(),
+                fs::copy_file(*found_path, destSubdir / found_path->filename(),
                               fs::copy_options::overwrite_existing);
               }
             }
@@ -170,8 +173,8 @@ void copyScript(){
   }
 }
 int main() {
-  // copyRealPassScript();
-  copyScript();
+  copyRealPassScript();
+  // copyScript();
   return 0;
 }
 

@@ -1,4 +1,4 @@
-#include "../tool.h"
+#include "tool.h"
 #include "pt.h"
 #include <iostream>
 #include <limits>
@@ -8,6 +8,7 @@
 #include "Counter.h"
 #include "fraction.h"
 #include "widget.h"
+#include <functional>
 
 using ivec = std::vector<int>;
 void printp2dv(const std::vector<p2d> &p2dv) {
@@ -252,6 +253,35 @@ void variadicTpl(T arg1, args... otherArgs){
   print(arg1);
   variadicTpl(otherArgs...);
 }
+void print_sum(int a, int b) { print(a + b); }
+
+void printab(int a, int b){
+  print("a: ", a, "b: ", b);
+}
+
+void testBind(){
+  auto bound_print = std::bind(print_sum, 10 ,std::placeholders::_1);
+  bound_print(5);
+
+// In modern C++ (C++11 and later), lambdas are often preferred over std::bind because:
+// They're more readable
+// They have better performance in many cases
+// They're more flexible
+  auto lambda_print = [](int b){print_sum(5, b);};
+  lambda_print(10);
+
+  std::function<void(int, int)> swapab = std::bind(printab, std::placeholders::_2, std::placeholders::_1 );
+  swapab(1,2);
+
+  MyClass obj;
+  auto bound_pt999 = std::bind(&MyClass::print,&obj,std::placeholders::_1);
+  bound_pt999(33);
+
+  // Binding with Smart Pointers
+  auto bound_shared = std::bind(&MyClass::print, std::make_unique<MyClass>(),std::placeholders::_1);
+  bound_shared(8888);
+
+}
 int main() {
   // testlimit();
   // testvector();
@@ -263,5 +293,6 @@ int main() {
   // testWidget();
   // testWidgetOperator();
   // testRefRef();
-  variadicTpl("hello", "there", "not", "here");
+  // variadicTpl("hello", "there", "not", "here");
+  testBind();
 }

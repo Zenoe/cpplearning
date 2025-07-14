@@ -57,6 +57,7 @@ or put initial state to be 1
 #include <atomic>
 #include <re2/re2.h>
 
+#include "net/threadpool.h"
 #include "gutils.h"
 #include "tool.h"
 
@@ -97,62 +98,6 @@ public:
           g_count +=1;
             std::cout << result << std::endl;
         }
-    }
-};
-
-// Thread pool for directory processing
-class ThreadPool {
-private:
-    std::vector<std::thread> workers;
-    std::queue<std::function<void()>> tasks;
-    std::mutex queue_mutex;
-    std::condition_variable cv;
-    std::atomic<bool> stop;
-
-public:
-    ThreadPool(size_t num_threads = std::thread::hardware_concurrency()) : stop(false) {
-        for (size_t i = 0; i < num_threads; ++i) {
-            workers.emplace_back([this] {
-                while (true) {
-                    std::function<void()> task;
-                    {
-                        std::unique_lock<std::mutex> lock(queue_mutex);
-                        cv.wait(lock, [this] { return stop || !tasks.empty(); });
-
-                        if (stop && tasks.empty()) return;
-
-                        task = std::move(tasks.front());
-                        tasks.pop();
-                    }
-                    task();
-                }
-            });
-        }
-    }
-
-    template<typename F>
-    void enqueue(F&& f) {
-        {
-            std::lock_guard<std::mutex> lock(queue_mutex);
-            // std::cout << "enque begin" << "\n";
-            if (stop) return;
-            // std::cout << "enque end" << "\n";
-            tasks.emplace(std::forward<F>(f));
-        }
-        cv.notify_one();
-    }
-
-    ~ThreadPool() {
-        {
-            std::lock_guard<std::mutex> lock(queue_mutex);
-            std::cout << "put stop true \n";
-            stop = true;
-        }
-        cv.notify_all();
-        for (std::thread& worker : workers) {
-            worker.join();
-        }
-
     }
 };
 
@@ -199,10 +144,17 @@ void fd_search_threaded(
           // subdir is captured by value to ensure each thread have their own copy of var
           // print("push ---------subdir:", subdir.string());
           active_tasks.fetch_add(1, std::memory_order_relaxed);
+          pool.enqueue(fd_search_threaded, subdir, std::cref(pattern),
+                       std::cref(gitignore_rules), std::ref(collector),
+                       std::ref(pool), // always std::ref for thread pool itself
+                       std::ref(active_tasks),
+                       std::ref(output_mtx), // always std::ref for mutex
+                       max_depth, current_depth + 1);
 
-          pool.enqueue([&, subdir,  max_depth, current_depth]() {
-                fd_search_threaded(subdir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth, current_depth + 1);
-            });
+          // pool.enqueue(fd_search_threaded, subdir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth, current_depth + 1);
+          // pool.enqueue([&, subdir,  max_depth, current_depth]() {
+          //       fd_search_threaded(subdir, pattern, gitignore_rules, collector, pool, active_tasks, output_mtx, max_depth, current_depth + 1);
+          //   });
         }
 
     } catch (const fs::filesystem_error& e) {

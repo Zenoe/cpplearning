@@ -58,19 +58,44 @@ public:
     ThreadPool(ThreadPool&&) = delete;
     ThreadPool& operator=(ThreadPool&&) = delete;
 
+    // accept a function and multiple vars
+    // able to pass arguments directly (as with std::thread or std::async),
     template<class F, class... Args>
     void enqueue(F&& f, Args&&... args) {
-        {
-            std::unique_lock<std::mutex> lock(queuemutex);
-            if (stop_.load()) {
-                throw std::runtime_error("ThreadPool is stopped");
-            }
-            tasks.emplace([f = std::forward<F>(f), ...args = std::forward<Args>(args)]() mutable {
-                f(std::move(args)...);
-            });
-        }
-        condition.notify_one();
+      {
+        std::unique_lock<std::mutex> lock(queuemutex);
+        if (stop_.load()) throw std::runtime_error("ThreadPool is stopped");
+        tasks.emplace(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+      }
+      condition.notify_one();
     }
+    // void enqueue(F&& f, Args&&... args) {
+    //     {
+    //         std::unique_lock<std::mutex> lock(queuemutex);
+    //         if (stop_.load()) {
+    //             throw std::runtime_error("ThreadPool is stopped");
+    //         }
+    //         // initialized lambda pack captures are a c++20 extension
+    //         tasks.emplace([f = std::forward<F>(f), ...args = std::forward<Args>(args)]() mutable {
+    //             f(std::move(args)...);
+    //         });
+    //     }
+    //     condition.notify_one();
+    // }
+
+    // template<class F, class... Args>
+    // only accept one arg: f, one has to wrap all agrs in a lambda along with captures to be passed to f
+    // accept any callable (including lambdas with captures), so you can "simulate argument passing" by capturing what you want.
+    // void enqueue(F&& f) {
+    //     {
+    //         std::lock_guard<std::mutex> lock(queuemutex);
+    //         // std::cout << "enque begin" << "\n";
+    //         if (stop_) return;
+    //         // std::cout << "enque end" << "\n";
+    //         tasks.emplace(std::forward<F>(f));
+    //     }
+    //     condition.notify_one();
+    // }
 };
 
 

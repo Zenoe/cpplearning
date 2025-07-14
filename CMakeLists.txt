@@ -9,3 +9,4 @@ set(CMAKE_CXX_STANDARD 17)
 # Add subdirectories containing their own CMakeLists.txt
 add_subdirectory(common)
 add_subdirectory(fd)
+add_subdirectory(hello)

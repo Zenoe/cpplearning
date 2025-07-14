@@ -1,5 +1,6 @@
 #ifndef TOOL_H_
 #define TOOL_H_
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <vector>
