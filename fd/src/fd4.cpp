@@ -1,5 +1,5 @@
 /**
- * * active_tasks: call atomic operation instead of ++ --
+ * active_tasks: call atomic operation instead of ++ --
  * enclose pool creation in a {} ? dtor when out of scope
  * each thread should have their own copy of max_depth, current_depth
  * classic bug in recursive/multithreaded enqueuing if the work-counting isn’t handled precisely.

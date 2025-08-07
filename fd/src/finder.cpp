@@ -62,6 +62,10 @@ void copyRealPassScript(){
   }
   size_t filecount = 0;
   vector<string> pmsIds;
+
+  // only copy the caseIds listed in new_realpass_id.txt if the file exists
+  const auto caseIdSet = read_file_to_set("new_realpass_id.txt");
+
   try{
     for(auto const &entry: fs::directory_iterator(logDir)){
       // cout << entry.path().string() << "   " << entry.path().string() << "\n";
@@ -78,6 +82,10 @@ void copyRealPassScript(){
           std::size_t pos = logfile.find('(');
           if(pos != std::string::npos){
             string_view caseId(logfile.data(), pos);
+
+            if(caseIdSet && caseIdSet->find(string(caseId)) ==  caseIdSet->end()){
+              continue;
+            }
             auto tmp = gutils::get_last_third_part(caseId);
             // cout << tmp << "\n";
             // pmsIds.push_back(gutils::get_last_third_part(caseId));
@@ -173,6 +181,15 @@ void copyScript(){
   }
 }
 int main() {
+  // const auto caseIdSet = read_file_to_set("new_realpass_id.txt");
+  // print(typeid(caseIdSet).name());
+  // for(auto item : *caseIdSet){
+  //   print(item);
+  // }
+  // auto it = caseIdSet->find("RG-三层路由域-OSPFv3-NSSA-DefaultMetric-65544-GN-001");
+  // if(it != caseIdSet->end()){
+  //   print("ok");
+  // }
   copyRealPassScript();
   // copyScript();
   return 0;

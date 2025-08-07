@@ -93,3 +93,22 @@ bool write_lines_to_file(const std::vector<std::string_view>& lines,
 
     return true;
 }
+
+
+std::optional<std::set<std::string>> read_file_to_set(const std::string& filename){
+
+  std::ifstream ifs(filename.c_str());
+  if(!ifs.is_open()){
+    std::cerr << "can not open " << filename << std::endl;
+    return std::nullopt;
+  }
+  std::set<std::string> caseSet;
+  std::string line;
+  while(std::getline(ifs, line)){
+    if(!line.empty()){
+      caseSet.insert(line);
+    }
+  }
+
+  return caseSet;
+}

@@ -146,6 +146,10 @@ And so are you.)";
   // custom delimiters, to preserve ( ) or other special sequence in string
   std::string complex = R"xyz(Text with )" inside)xyz";
   print(complex);
+
+  std::string ss = "abcde";
+  std::string_view sv(ss.data(), ss.size()-1);
+  print(sv);
 }
 
 void foo(Counter const &c) {
@@ -286,7 +290,7 @@ int main() {
   // testlimit();
   // testvector();
   // testEnum();
-  // testString();
+  testString();
   // testCls();
   // testPtr();
   // testThrow();
@@ -294,5 +298,5 @@ int main() {
   // testWidgetOperator();
   // testRefRef();
   // variadicTpl("hello", "there", "not", "here");
-  testBind();
+  // testBind();
 }
