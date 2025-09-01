@@ -1,0 +1,16 @@
+mkdir build
+cd build
+cmake ..
+make
+
+# Upload a file
+./file_client upload test.txt
+
+# List files
+./file_client list
+
+# Download a file
+./file_client download test.txt downloaded_test.txt
+
+# Delete a file
+./file_client delete test.txt

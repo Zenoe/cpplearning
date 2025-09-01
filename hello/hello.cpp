@@ -9,6 +9,7 @@
 #include "fraction.h"
 #include "widget.h"
 #include <functional>
+#include "ClipItem.h"
 
 using ivec = std::vector<int>;
 void printp2dv(const std::vector<p2d> &p2dv) {
@@ -286,11 +287,21 @@ void testBind(){
   bound_shared(8888);
 
 }
+
+void testCtor(){
+  print("testCtor");
+  ClipItem item;
+  std::vector<bool> highlight_mask(10, false);
+  DisplayClipItem dci(item, std::move(highlight_mask));
+  print(dci.id);
+
+}
 int main() {
   // testlimit();
   // testvector();
   // testEnum();
-  testString();
+  // testString();
+  testCtor();
   // testCls();
   // testPtr();
   // testThrow();
