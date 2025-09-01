@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package fileservice;
+
+service FileService {
+  // Upload a file
+  rpc UploadFile(stream FileChunk) returns (FileResponse);
+
+  // Download a file
+  rpc DownloadFile(FileRequest) returns (stream FileChunk);
+
+  // List files in directory
+  rpc ListFiles(ListRequest) returns (FileList);
+
+  // Delete a file
+  rpc DeleteFile(FileRequest) returns (FileResponse);
+}
+
+message FileChunk {
+  string filename = 1;
+  bytes data = 2;
+  int64 offset = 3;
+  bool is_last = 4;
+}
+
+message FileRequest {
+  string filename = 1;
+}
+
+message ListRequest {
+  string directory = 1;
+}
+
+message FileResponse {
+  bool success = 1;
+  string message = 2;
+  int64 file_size = 3;
+}
+
+message FileInfo {
+  string name = 1;
+  int64 size = 2;
+  bool is_directory = 3;
+}
+
+message FileList {
+  repeated FileInfo files = 1;
+}
