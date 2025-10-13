@@ -12,6 +12,10 @@
 #include "ClipItem.h"
 
 using ivec = std::vector<int>;
+void printp2d(const p2d &p) {
+  std::cout << "(" << p.x << "," << p.y << ")";
+  print();
+}
 void printp2dv(const std::vector<p2d> &p2dv) {
   for (const auto i : p2dv) {
     std::cout << "(" << i.x << "," << i.y << ")";
@@ -288,6 +292,19 @@ void testBind(){
 
 }
 
+void testPlacementNew(){
+  p2d* p1 = new p2d(1,2);
+  printp2d(*p1);
+
+  void *raw = operator new (sizeof(p2d)); // 只分配，不构造 = malloc
+  p2d* p2 = new(raw) p2d(3,4);
+  printp2d(*p2);
+
+  delete p1;
+  p2->~p2d();// 显式析构（只析构对象，不释放内存）
+  operator delete (raw); // 释放内存
+}
+
 void testCtor(){
   print("testCtor");
   ClipItem item;
@@ -301,7 +318,7 @@ int main() {
   // testvector();
   // testEnum();
   // testString();
-  testCtor();
+  // testCtor();
   // testCls();
   // testPtr();
   // testThrow();
@@ -310,4 +327,5 @@ int main() {
   // testRefRef();
   // variadicTpl("hello", "there", "not", "here");
   // testBind();
+  testPlacementNew();
 }
