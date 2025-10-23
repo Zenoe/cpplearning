@@ -1,0 +1,123 @@
+* 归并排序 (Merge Sort) 特点:
+时间复杂度:
+- 最好情况: O(n log n)
+- 平均情况: O(n log n)
+- 最坏情况: O(n log n)
+
+空间复杂度: O(n) - 需要额外的存储空间
+
+优点:
+1. 稳定排序算法 - 相等元素的相对位置不变
+多关键字排序：例如，先按学生姓名排序，再按分数排序。第一次按姓名排序后，当第二次按分数排序时，如果使用稳定的归并排序，那么同分数的学生仍然会保持姓名的字典序。
+
+交易系统：先按时间戳排序，再按交易金额排序。稳定排序可以保证相同金额的交易按时间顺序排列。
+
+2. 时间复杂度稳定 - 不受输入数据影响
+与快速排序相比，归并排序没有 O(n²) 的最坏情况。当处理GB或TB级别的数据时，如果使用快速排序遇到最坏情况，性能会急剧下降。
+适合大数据排序
+4. 可以用于外部排序
+5. 容易并行化
+对于链表排序，只需要 O(1) 的额外空间
+
+缺点:
+1. 需要额外的存储空间
+2. 对于小数组开销较大
+
+适用场景:
+- 需要稳定排序的场合
+- 大数据集排序
+- 链表排序
+- 外部排序
+
+** 链表代码
+#+begin_src cpp
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode(int x) : val(x), next(nullptr) {}
+};
+
+class LinkedListMergeSort {
+public:
+    // 链表归并排序
+    static ListNode* mergeSort(ListNode* head) {
+        if (!head || !head->next) return head;
+
+        // 分割链表
+        ListNode* mid = getMiddle(head);
+        ListNode* left = head;
+        ListNode* right = mid->next;
+        mid->next = nullptr;
+
+        // 递归排序
+        left = mergeSort(left);
+        right = mergeSort(right);
+
+        // 合并
+        return merge(left, right);
+    }
+
+private:
+    // 找到链表中点 快慢指针法（龟兔赛跑法）
+    static ListNode* getMiddle(ListNode* head) {
+        if (!head) return head;
+
+        ListNode* slow = head;
+        ListNode* fast = head;
+        ListNode* prev = nullptr;
+
+        // fast run at 2x speed
+        while (fast && fast->next) {
+            prev = slow;
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+
+        return prev;
+    }
+
+    // 合并两个有序链表
+    static ListNode* merge(ListNode* l1, ListNode* l2) {
+        ListNode dummy(0);
+        ListNode* tail = &dummy;
+
+        while (l1 && l2) {
+            if (l1->val <= l2->val) {
+                tail->next = l1;
+                l1 = l1->next;
+            } else {
+                tail->next = l2;
+                l2 = l2->next;
+            }
+            tail = tail->next;
+        }
+
+        tail->next = l1 ? l1 : l2;
+        return dummy.next;
+    }
+};
+#+end_src
+
+* 堆
+- 优点
+时间复杂度稳定：最好、最坏、平均都是O(n log n)
+
+空间效率高：原地排序，只需要O(1)额外空间
+
+适合大数据集：没有快速排序的最坏情况
+
+- 缺点
+不稳定：相同元素的相对位置可能改变
+
+缓存不友好：对数组的访问模式比较随机
+
+常数因子较大：实际运行速度通常比快速排序慢
+
+- 适用场景
+内存受限环境：需要原地排序时
+
+实时系统：需要保证最坏情况性能时
+
+大数据集排序：当快速排序可能退化为O(n²)时
+
+优先级队列实现：堆是优先级队列的自然数据结构
