@@ -1,3 +1,4 @@
+// g++ -std=c++17 main.cpp -o quick -g
 using namespace std;
 #include <vector>
 #include <iostream>
