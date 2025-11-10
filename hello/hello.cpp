@@ -10,6 +10,8 @@
 #include "widget.h"
 #include <functional>
 #include "ClipItem.h"
+#include <map>
+#include <unordered_map>
 
 using ivec = std::vector<int>;
 void printp2d(const p2d &p) {
@@ -313,6 +315,32 @@ void testCtor(){
   print(dci.id);
 
 }
+
+void testMap(){
+  std::unordered_map<int, std::string> umap;
+  umap[1] = "aaa";
+  umap.insert({2, "bbb"});
+
+  for(auto& it : umap){
+    std::cout << it.first << " " << it.second << std::endl;
+  }
+
+  std::map<std::string, std::string> mmap;
+  mmap["aaa"] = "111";
+  mmap["bbb"] = "222";
+
+  mmap.insert({"asdfasdf", "234234324"});
+
+  mmap.erase("aaa");
+  auto it = mmap.find("aaa");
+  if(it != mmap.end()){
+    std::cout << it->first << " " << it->second << std::endl;
+  }
+  it = mmap.find("aaa");
+  if(it != mmap.end()){
+    std::cout << it->first << " " << it->second << std::endl;
+  }
+}
 int main() {
   // testlimit();
   // testvector();
@@ -328,4 +356,5 @@ int main() {
   // variadicTpl("hello", "there", "not", "here");
   // testBind();
   testPlacementNew();
+  testMap();
 }
